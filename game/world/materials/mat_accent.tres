@@ -1,0 +1,20 @@
+; Blauer Akzent (#4da3ff) mit Emission.
+;
+; Wichtig für die Weltlesbarkeit: Dieses Material markiert AUSSCHLIESSLICH
+; benutzbare oder bedeutungstragende Dinge — Interaktionsziele, Quest-Marker,
+; Checkpoint-Säulen, Schwertspur. Wer es als Dekoration einsetzt, zerstört die
+; Regel "was blau leuchtet, ist benutzbar" (docs/RESEARCH.md Abschnitt 5).
+;
+; emission_energy_multiplier liegt über 1.0, damit der Glow-Schwellwert des
+; Environments (1.1) überschritten wird und der Akzent tatsächlich leuchtet.
+
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "Akzent Blau (Emission)"
+albedo_color = Color(0.302, 0.639, 1, 1)
+roughness = 0.35
+metallic = 0.0
+emission_enabled = true
+emission = Color(0.302, 0.639, 1, 1)
+emission_energy_multiplier = 1.6

@@ -1,0 +1,143 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/pause_menu.gd" id="1_script"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+layer = 20
+process_mode = 3
+script = ExtResource("1_script")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.55)
+
+[node name="MainPage" type="Panel" parent="Root"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = -190.0
+offset_right = 170.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/MainPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Root/MainPage/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "Pause"
+
+[node name="PlaytimeLabel" type="Label" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.596078, 0.670588, 1)
+horizontal_alignment = 1
+text = "00:00"
+
+[node name="ContinueButton" type="Button" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+text = "Weiter"
+
+[node name="SaveButton" type="Button" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+text = "Speichern"
+
+[node name="LoadButton" type="Button" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+disabled = true
+text = "Laden"
+
+[node name="OptionsButton" type="Button" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+text = "Optionen"
+
+[node name="QuitButton" type="Button" parent="Root/MainPage/Margin/VBox"]
+layout_mode = 2
+text = "Spiel beenden"
+
+[node name="OptionsPage" type="Panel" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = -190.0
+offset_right = 170.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/OptionsPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Root/OptionsPage/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="OptionsTitle" type="Label" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "Optionen"
+
+[node name="SensitivityLabel" type="Label" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.596078, 0.670588, 1)
+text = "Maus-Sensitivität"
+
+[node name="SensitivitySlider" type="HSlider" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+
+[node name="FullscreenCheck" type="CheckButton" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+text = "Vollbild"
+
+[node name="VolumeLabel" type="Label" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.596078, 0.670588, 1)
+text = "Gesamtlautstärke"
+
+[node name="VolumeSlider" type="HSlider" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="Root/OptionsPage/Margin/VBox"]
+layout_mode = 2
+text = "Zurück"

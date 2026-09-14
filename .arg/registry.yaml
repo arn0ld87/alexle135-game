@@ -1,0 +1,604 @@
+# Agent- und Arbeitsregister (ARG) für Alexle Realm.
+#
+# Maschinenlesbare Quelle der Wahrheit über Zuständigkeiten und Arbeitsstand.
+# Menschenlesbare Fassung samt Regeln: docs/ARG.md
+# Prüfung auf Hygiene (done ohne Evidence, fehlende Dateien): tools/arg_check.sh
+#
+# Statuswerte: planned | assigned | in_progress | blocked | review | verified | done | deprecated
+#
+# Regel: "verified" verlangt einen ausgeführten Befehl unter `validation` UND
+# existierende Dateien unter `evidence`. "done" ist für Arbeit ohne ausführbare
+# Prüfung reserviert (z. B. Dokumentation) und verlangt trotzdem `evidence`.
+# Ein Eintrag ohne Evidence darf niemals über "review" hinaus.
+
+meta:
+  project: Alexle Realm
+  arg_version: 1
+  last_updated: 2026-09-15
+  godot_version: 4.7.stable
+  blender_version: 5.2.1 LTS
+  # Auftrag nennt Godot 4.3+ / Blender 4.x. Installiert und verwendet sind
+  # neuere Versionen. Abweichung nach oben, bewusst, dokumentiert.
+  smoke_test: tools/smoke_test.sh
+  test_suite: tools/run_tests.sh
+
+# --- Agentenrollen --------------------------------------------------------
+# model_class: welche Kostenklasse die Rolle bedient.
+#   lead   = Hauptagent (Architektur, Integration, Review, Entscheidungen)
+#   mid    = Implementierung nach klarer Spezifikation
+#   cheap  = mechanische Arbeit, Suche, Inventur
+
+agents:
+  - id: lead-architect
+    name: Lead Engineer / Orchestrator
+    model_class: lead
+    scope: >
+      Gesamtarchitektur, zentrale Datenmodelle, Savegame-Format, Kampfkontrakt,
+      Weltkonsistenz, Privacy- und Lizenzentscheidungen, Integration, finale Reviews.
+    status: in_progress
+
+  - id: research-web
+    name: Website-Rechercheur
+    model_class: mid
+    scope: >
+      Belegte Faktenextraktion von alexle135.de. Keine Interpretation, kein Mapping
+      auf Spielinhalte.
+    status: verified
+
+  - id: research-assets
+    name: Asset-Inventarisierer
+    model_class: cheap
+    scope: >
+      Mechanische Inventur lokaler Assets (Metadaten, Formate, Auflösungen).
+      Nur lesend, keine Bildinhalte, keine Lizenzbehauptungen.
+    status: in_progress
+
+  - id: godot-gameplay
+    name: Gameplay-Entwickler (Player, Kampf)
+    model_class: mid
+    scope: Player-Controller, Kamera, Angriff, I-Frames, Respawn.
+    status: in_progress
+
+  - id: godot-ui
+    name: UI-Entwickler
+    model_class: mid
+    scope: HUD, Herzen, Dialogbox, Interaktions-Prompt, Toast, Pause-/Optionsmenü.
+    status: in_progress
+
+  - id: godot-interactions
+    name: Interaktions-Entwickler
+    model_class: mid
+    scope: Kisten, Türen, Schlüssel, Schalter, Druckplatten, Checkpoints, NPC-Auslöser.
+    status: planned
+
+  - id: godot-enemies
+    name: Gegner-Entwickler
+    model_class: mid
+    scope: Gegner-Basisklasse, konkrete Gegnertypen, Telegraphen, Mini-Boss.
+    status: planned
+
+  - id: godot-world
+    name: Weltbauer
+    model_class: mid
+    scope: Blockout von Hub und Dungeons über CSG/GridMap, Navigation, Beleuchtung.
+    status: planned
+
+  - id: blender-assets
+    name: Blender-Modellierer
+    model_class: mid
+    scope: Eigenbau-Meshes, glTF-Export, 1 Godot-Unit = 1 Meter, Metallic/Roughness.
+    status: planned
+
+  - id: qa-gameplay
+    name: QA / Testautor
+    model_class: cheap
+    scope: Testfälle nach vorgegebener Spezifikation gegen das Headless-Harness.
+    status: planned
+
+  - id: docs-maintainer
+    name: Dokumentationspflege
+    model_class: cheap
+    scope: PROGRESS.md, CONTROLS.md, ASSETS.md, ARG-Aktualisierung nach Vorgabe.
+    status: planned
+
+  - id: license-review
+    name: Lizenzprüfer
+    model_class: cheap
+    scope: Herkunft und Lizenz jedes Fremdassets belegen, ASSETS.md pflegen.
+    status: planned
+
+# --- Arbeitseinheiten -----------------------------------------------------
+
+tasks:
+  - id: T-001
+    name: Repository- und Projektgerüst
+    type: infrastructure
+    status: verified
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Verzeichnisstruktur, git init, .gitignore mit Secret-Mustern,
+      project.godot mit Input-Map, Collision-Layern und Forward+.
+    dependencies: []
+    inputs: []
+    outputs:
+      - game/project.godot
+      - .gitignore
+      - game/icon.svg
+      - game/scenes/boot.tscn
+      - game/scripts/core/boot.gd
+    validation:
+      - "tools/smoke_test.sh -> Exit 0, keine Fehler im Log"
+    evidence:
+      - game/project.godot
+      - tools/smoke_test.sh
+    last_updated: 2026-09-15
+
+  - id: T-002
+    name: Zentrales Datenmodell und Persistenz
+    type: architecture
+    status: verified
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      GameState als einzige Quelle der Wahrheit (Gesundheit in Viertelherzen,
+      Packets, Inventar, Weltflags, Quests, Checkpoint), EventBus als Signalbus,
+      SaveManager mit versioniertem JSON-Format und Migrationspunkt.
+    dependencies: [T-001]
+    inputs: []
+    outputs:
+      - game/scripts/core/event_bus.gd
+      - game/scripts/core/game_state.gd
+      - game/scripts/core/save_manager.gd
+    validation:
+      - "tools/run_tests.sh test_core_state.gd -> 25 bestanden, 0 fehlgeschlagen, Exit 0"
+    evidence:
+      - game/scripts/core/game_state.gd
+      - game/scripts/core/save_manager.gd
+      - game/tests/test_core_state.gd
+    last_updated: 2026-09-15
+
+  - id: T-003
+    name: Kampfkontrakt HitBox / HurtBox
+    type: architecture
+    status: review
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Geteilter Vertrag zwischen Player und Gegnern. HitBox öffnet ein
+      Angriffsfenster und trifft jede HurtBox höchstens einmal pro Aktivierung.
+      HurtBox meldet nur, entscheidet nichts.
+    dependencies: [T-002]
+    inputs: []
+    outputs:
+      - game/scripts/systems/hit_box.gd
+      - game/scripts/systems/hurt_box.gd
+    validation:
+      - "OFFEN: Integrationstest über Area3D-Überlappung fehlt noch (T-008/T-011)"
+    evidence:
+      - game/scripts/systems/hit_box.gd
+      - game/scripts/systems/hurt_box.gd
+    last_updated: 2026-09-15
+
+  - id: T-004
+    name: Headless-Test-Harness
+    type: infrastructure
+    status: verified
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Eigener Runner ohne Fremdaddon. Läuft als Szene, damit Autoloads
+      vorhanden sind. Unterstützt synchrone (test_*) und Frame-abhängige
+      (atest_*) Tests sowie einen Dateifilter für parallele Arbeit.
+    dependencies: [T-002]
+    inputs: []
+    outputs:
+      - game/tests/test_runner.gd
+      - game/tests/test_main.tscn
+      - tools/run_tests.sh
+      - tools/smoke_test.sh
+    validation:
+      - "tools/run_tests.sh -> Exit 0"
+      - "tools/run_tests.sh test_core_state.gd -> Filter aktiv, 25 bestanden, Exit 0"
+      - >
+        Regressionsnachweis falsches Grün: Testdatei mit absichtlichem
+        Parse-Fehler -> Exit 1 und Meldung "Script nicht instanziierbar".
+        Vor dem Fix: Exit 0 bei 0 ausgeführten Tests.
+    evidence:
+      - game/tests/test_runner.gd
+      - tools/run_tests.sh
+    notes: >
+      Während der M1-Arbeit gefunden und behoben: Bei einem Parse-Fehler in einer
+      Testdatei meldete der Runner "0 bestanden, 0 fehlgeschlagen" und Exit 0 —
+      ein Fehlschlag, der wie Erfolg aussah und jede Evidence entwertet hätte.
+      Drei Gegenmaßnahmen: script.can_instantiate() wird geprüft, ein Lauf ohne
+      einzige ausgeführte Testmethode gilt als Fehler, und run_tests.sh prüft das
+      Log zusätzlich auf "Parse Error" / "Failed to load script" / "Compile Error".
+      Generisches "ERROR:" wird bewusst nicht geprüft, weil test_core_state.gd
+      absichtlich Fehlermeldungen erzeugt, wenn es ungültige Speicher-Slots testet.
+    last_updated: 2026-09-15
+
+  - id: T-005
+    name: Website-Recherche alexle135.de
+    type: research
+    status: verified
+    owner: research-web
+    model_class: mid
+    scope: >
+      25 Seiten abgerufen, 10 Projekte mit Fachvokabular und Statusangaben
+      erfasst, zwei Kanon-Widersprüche unaufgelöst dokumentiert statt geglättet.
+    dependencies: []
+    inputs:
+      - "https://alexle135.de/ und Unterseiten"
+    outputs:
+      - docs/research/website-research.md
+    validation:
+      - "Struktur-Check: 16 Überschriften, alle Pflichtabschnitte vorhanden"
+      - "Privacy-Scan auf Mail/Telefon/private IPs -> Kontaktadresse redigiert, danach clean"
+    evidence:
+      - docs/research/website-research.md
+    last_updated: 2026-09-15
+
+  - id: T-006
+    name: Inventur lokaler Assets unter alexle-vsco
+    type: research
+    status: verified
+    owner: research-assets
+    model_class: cheap
+    scope: >
+      Metadaten-Inventur von /Volumes/T7/Projekte/alexle-vsco. Rein lesend.
+      Keine Bildinhalte, keine Lizenzbehauptung, kein Upload, kein Kopieren.
+    dependencies: []
+    inputs:
+      - /Volumes/T7/Projekte/alexle-vsco
+    outputs:
+      - docs/research/asset-inventory.md
+    validation:
+      - "Inventur geliefert: 451.618 Dateien, 6,9 GB, 330 Zeilen Bericht"
+      - >
+        Secret-/Privacy-Scan auf .env, Token, API-Keys, Passwörter, Schlüssel,
+        Mailadressen, private IPs und Telefonnummern -> keine Treffer.
+      - "Strukturprüfung: alle 7 verlangten Abschnitte vorhanden"
+    evidence:
+      - docs/research/asset-inventory.md
+    notes: >
+      Befund widerlegt eine Auftragsannahme: Das Verzeichnis ist KEINE
+      VSCO-Fotobibliothek, sondern ein Astro-Web-Monorepo (vermutlich die Quelle
+      von alexle135.de). Überwiegend Build-Artefakte; 4.234 Bilder sind
+      Website-Grafiken, 0 3D-Dateien. Als Texturquelle damit weitgehend
+      unbrauchbar, für die Art Direction aber wertvoller als erwartet: In
+      src/styles/warm-noir.css stehen die echte Markenpalette und die
+      Schriftnamen (Geist, Geist Mono, Newsreader). Das hat Annahme A1 in
+      docs/RESEARCH.md durch Belege ersetzt und einen Art-Direction-Konflikt
+      aufgedeckt (siehe T-015).
+    last_updated: 2026-09-15
+
+  - id: T-015
+    name: Art-Direction-Konflikt entschieden und dokumentiert
+    type: design
+    status: done
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Die aktuelle Website-Palette ist warm-monochrom (mono-Reihe #1c1b18 bis
+      #faf8f4, grüne Akzente trotz "orange"-Variablennamen, Terrakotta, Blau nur
+      als Informationssignal). Der Auftrag verlangt dagegen dunkles Glassmorphism
+      mit blauen Akzenten, und der Belegstand von Dezember 2025 stützt das.
+      Entscheidung: Auftragsvorgabe behalten, weil Blau im Spiel zusätzlich die
+      Funktion "benutzbar" trägt und eine Umstellung ein Art-Direction-Umbau wäre,
+      keine Farbanpassung. Konflikt und Umstellweg dokumentiert, Entscheidung
+      liegt beim Auftraggeber.
+    dependencies: [T-006, T-007]
+    inputs:
+      - /Volumes/T7/Projekte/alexle-vsco/src/styles/warm-noir.css
+    outputs:
+      - docs/RESEARCH.md
+      - docs/ASSETS.md
+    validation:
+      - >
+        Palette an genau drei zentralen Stellen gebündelt, damit eine Umstellung
+        abgegrenzt bleibt: game/ui/theme.tres,
+        game/world/materials/mat_accent.tres, game/world/realm_environment.tres
+      - "Konflikt in docs/RESEARCH.md Abschnitt 1.3 mit Werten und Begründung festgehalten"
+    evidence:
+      - docs/RESEARCH.md
+      - docs/ASSETS.md
+    last_updated: 2026-09-15
+
+  - id: T-007
+    name: Kanon-Mapping und Art Direction
+    type: design
+    status: done
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Trennung Kanon / Annahme / Fiktion, Mapping von zehn belegten Projekten
+      auf Zone, Item, NPC, Boss und jeweils eine aus dem Kanon abgeleitete
+      Mechanik. Fünf explizite Annahmen mit Risikobewertung. Farbpalette.
+    dependencies: [T-005]
+    inputs:
+      - docs/research/website-research.md
+    outputs:
+      - docs/RESEARCH.md
+    validation:
+      - "Jede Sachaussage auf Belegdatei rückführbar; Annahmen als [ANNAHME] markiert"
+      - "Privacy-Prüfung: Vorberuf-Biografie und Kontaktdaten bewusst ausgeschlossen"
+    evidence:
+      - docs/RESEARCH.md
+    last_updated: 2026-09-15
+
+  - id: T-008
+    name: Player-Controller, Kamera, Kampfanbindung
+    type: gameplay
+    status: in_progress
+    owner: godot-gameplay
+    model_class: mid
+    scope: >
+      CharacterBody3D, SpringArm3D-Schulterkamera, Bewegung relativ zur
+      Kamera, Angriff mit Vorbereitung/Fenster/Nachziehen, Hit-Stop,
+      I-Frames, Blocken, Tod und Respawn am Checkpoint, Fallschutz unter Y=-50.
+    dependencies: [T-002, T-003]
+    inputs:
+      - game/scripts/core/game_state.gd
+      - game/scripts/systems/hit_box.gd
+      - game/scripts/systems/hurt_box.gd
+    outputs:
+      - game/player/player.tscn
+      - game/player/player.gd
+      - game/player/player_camera.gd
+      - game/tests/test_player.gd
+    validation:
+      - "tools/run_tests.sh test_player.gd -> 14 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/smoke_test.sh -> Exit 0, keine Fehler im Log"
+      - >
+        Scope-Prüfung durch den Lead: project.godot unverändert bei 13 Actions,
+        save_manager.gd und game_state.gd unangetastet.
+    evidence:
+      - game/player/player.gd
+      - game/player/player.tscn
+      - game/tests/test_player.gd
+    notes: >
+      Angenommen erst NACH Korrektur durch den Lead. Das Review fand zwei echte
+      Fehler, die die 9 gelieferten Tests nicht abdeckten:
+      (1) Die selbstgebaute Flankenerkennung wurde nur bedingt aktualisiert
+      (Sprung nur am Boden, Angriff nur in Phase NONE). Dadurch verfielen
+      Tastendrücke: Sprungtaste im Flug neu gedrückt und bei der Landung
+      gehalten löste keinen Sprung aus.
+      (2) Ohne gesetzten Checkpoint zeigte checkpoint_position auf (0,0,0);
+      Absturzsicherung und Respawn hätten den Spieler ins Leere gesetzt.
+      Behoben durch einen Eingabepuffer von 0,15 s (der erste Ansatz, den
+      Zustand nur unbedingt zu aktualisieren, griff zu kurz — die Flanke wurde
+      dann korrekt erkannt, aber weiterhin verworfen) und einen Rückfall-
+      Checkpoint in _ready. Fünf Regressionstests ergänzt: 9 -> 14 Testfälle.
+    last_updated: 2026-09-15
+
+  - id: T-009
+    name: HUD, Dialog, Pause- und Optionsmenü
+    type: ui
+    status: in_progress
+    owner: godot-ui
+    model_class: mid
+    scope: >
+      Viertelherz-genaue Herzenreihe, Packets, aktives Item, Mini-Map-Platzhalter,
+      Quest-Hinweis, Dialogbox mit Schreibmaschineneffekt, Interaktions-Prompt,
+      Toast-Warteschlange, Pause mit Speichern/Laden und Optionen.
+    dependencies: [T-002]
+    inputs:
+      - game/scripts/core/event_bus.gd
+      - game/scripts/core/game_state.gd
+    outputs:
+      - game/ui/hud.tscn
+      - game/ui/heart_row.tscn
+      - game/ui/dialogue_box.tscn
+      - game/ui/interaction_prompt.tscn
+      - game/ui/toast.tscn
+      - game/ui/pause_menu.tscn
+      - game/ui/theme.tres
+      - game/tests/test_ui.gd
+    validation:
+      - "tools/run_tests.sh test_ui.gd -> 9 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/smoke_test.sh -> Exit 0"
+      - >
+        Palette-Prüfung durch den Lead: Akzent #4da3ff, heller Akzent #7cc4ff,
+        Text #e6edf7, gedimmt #8b98ab, Rand #1d2635, Herz #ff5a6e und das
+        Glas-Panel #131a26 bei 82 % Deckkraft exakt wie vorgegeben umgesetzt.
+      - "Scope-Prüfung: project.godot bei 13 Actions, Kern-Skripte unangetastet"
+    evidence:
+      - game/ui/hud.gd
+      - game/ui/theme.tres
+      - game/tests/test_ui.gd
+    notes: >
+      Ohne Nachbesserung angenommen. Zwei gemeldete Abweichungen sind sachlich
+      richtig und kein Mangel: Quest-Hinweis und Item-Slot zeigen die jeweilige
+      ID, weil GameState keine Anzeigenamen kennt. Eine Namensregistry gehört
+      zum Quest-System in M4. Der Agent hat außerdem eine GDScript-Falle im
+      eigenen Testcode gefunden und behoben (Lambda-Closure mutierte eine Kopie
+      des Zählers statt der äußeren Variable).
+    last_updated: 2026-09-15
+
+  - id: T-010
+    name: Interaktive Objekte und Checkpoints
+    type: gameplay
+    status: planned
+    owner: godot-interactions
+    model_class: mid
+    scope: >
+      Kiste (genau einmal plünderbar, über Weltflag), verschlossene Tür mit
+      Schlüsselbedarf, Schlüssel-Aufsammler, Schalter, Druckplatte, Checkpoint,
+      NPC-Dialogauslöser. Alle persistent über GameState-Flags.
+    dependencies: [T-002, T-008]
+    inputs:
+      - game/scripts/core/game_state.gd
+    outputs:
+      - game/scripts/interactions/interactable.gd
+      - game/scripts/interactions/chest.gd
+      - game/scripts/interactions/locked_door.gd
+      - game/scripts/interactions/item_pickup.gd
+      - game/scripts/interactions/lever_switch.gd
+      - game/scripts/interactions/pressure_plate.gd
+      - game/scripts/interactions/checkpoint.gd
+      - game/scripts/interactions/npc_dialogue.gd
+      - game/scenes/interactables/chest.tscn
+      - game/tests/test_interactions.gd
+    validation:
+      - "tools/run_tests.sh test_interactions.gd -> 14 bestanden, 0 fehlgeschlagen, Exit 0"
+      - >
+        Flakiness-Prüfung: drei aufeinanderfolgende Läufe je 14 bestanden.
+        Der Agent hatte gemeldet, dass 2 Physik-Frames nur in etwa der Hälfte
+        der Läufe reichten und deshalb auf 4 erhöht.
+      - "grep auf print/DEBUG in interactions und interactables -> keine Treffer"
+      - "Scope-Prüfung: project.godot bei 13 Actions, Kern und hurt_box.gd unangetastet"
+    evidence:
+      - game/scripts/interactions/interactable.gd
+      - game/scripts/interactions/chest.gd
+      - game/tests/test_interactions.gd
+    notes: >
+      Angenommen mit einer Härtung durch den Lead: checkpoint.gd griff auf
+      get_tree().current_scene.scene_file_path ohne Null-Prüfung zu. Der Pfad
+      kommt jetzt aus `owner` — der Szene, in der der Checkpoint platziert wurde.
+      Das ist korrekt auch dann, wenn die Welt als Unterszene läuft, und kann
+      nicht auf null zugreifen. Ein falscher Wert an dieser Stelle wäre ein
+      kaputter Speicherstand.
+      Bemerkenswerte Rückmeldung des Agenten: Meine Spezifikation verlangte
+      collision_mask = 0 für JEDES Interactable, was body_entered bei Checkpoint,
+      Druckplatte und Auto-Aufnahme strukturell unmöglich gemacht hätte. Der
+      Agent hat den Widerspruch aufgelöst statt die Vorgabe stumpf zu befolgen.
+      Der Fehler lag beim Lead.
+    last_updated: 2026-09-15
+
+  - id: T-011
+    name: Gegner-Basisklasse und erster Gegnertyp
+    type: gameplay
+    status: planned
+    owner: godot-enemies
+    model_class: mid
+    scope: >
+      Erweiterbare Basisklasse mit Zustandsautomat, Sichtbereich, Verfolgung,
+      telegrafiertem Angriff und Tod. Ein konkreter Gegner für M1.
+      Weitere Typen und Mini-Boss in M2.
+    dependencies: [T-003, T-008]
+    inputs:
+      - game/scripts/systems/hit_box.gd
+      - game/scripts/systems/hurt_box.gd
+    outputs:
+      - game/enemies/
+      - game/tests/test_enemies.gd
+    validation:
+      - "OFFEN"
+    evidence: []
+    last_updated: 2026-09-15
+
+  - id: T-012
+    name: Hub-Blockout Leipzig-Knoten
+    type: world
+    status: planned
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Spielbarer Hub mit Boden, Kollision, VPS-Turm (48 Container-Fenster),
+      Beleuchtung, Spawn, Mentor-NPC AS, Kiste mit Schwert ed25519, Gegner,
+      verschlossener Tür und Schlüssel. Integrationsebene aller Subsysteme.
+    dependencies: [T-008, T-009, T-010, T-014]
+    inputs:
+      - docs/RESEARCH.md
+    outputs:
+      - game/scenes/hub.tscn
+      - game/scenes/hub.gd
+      - game/world/hub_blockout.gd
+      - game/tests/test_hub.gd
+    validation:
+      - "tools/run_tests.sh test_hub.gd -> 12 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/smoke_test.sh -> Exit 0, keine Fehler im Log"
+      - >
+        Abgedeckte Punkte aus Auftrag Abschnitt 26: Player fällt nicht durch die
+        Welt (steht mit Bodenkontakt), Kollision des Blockouts wirkt, Tür bleibt
+        ohne Key zu, Key öffnet und wird verbraucht, Kiste genau einmal
+        plünderbar, geleerte Kiste bleibt nach Flag-Wiederherstellung leer,
+        Checkpoint gesetzt, erste Hauptquest gestartet und nur mit Schlüssel
+        abschließbar.
+    evidence:
+      - game/scenes/hub.tscn
+      - game/scenes/hub.gd
+      - game/world/hub_blockout.gd
+      - game/tests/test_hub.gd
+    notes: >
+      Blockout als Code (21 Quader aus einer Datentabelle) statt als
+      handgepflegte Szene, damit der Austausch gegen Blender-Meshes in M3 ein
+      Löschen ist. hub.gd ist die einzige Stelle, an der Player, UI und
+      Interactables voneinander erfahren — die Systeme kennen einander bewusst nicht.
+      Zwei Funde beim eigenen Test: (1) Meine Testerwartung zur Spielerhöhe war
+      falsch, nicht der Code — der Ursprung der Figur liegt an den Füßen.
+      (2) Der Checkpoint-Szenenpfad war unsauber (siehe T-010).
+      Der Gegner fehlt noch in der Szene und wird nach Abschluss von T-011
+      eingehängt.
+    last_updated: 2026-09-15
+
+  - id: T-014
+    name: Art-Direction-Ressourcen und VPS-Turm
+    type: world
+    status: verified
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      Weltumgebung (Himmel, Fog, SSAO, Glow mit hohem Schwellwert) und fünf
+      Blockout-Materialien als handgeschriebene .tres-Dateien. VPS-Turm mit
+      genau 48 Container-Fenstern als MultiMesh in einem Draw Call.
+      Der Glow-Schwellwert liegt bewusst bei 1.1, damit nur echte Emission
+      leuchtet und die Regel "was blau leuchtet, ist benutzbar" lesbar bleibt.
+    dependencies: [T-001, T-007]
+    inputs:
+      - docs/RESEARCH.md
+      - docs/research/website-research.md
+    outputs:
+      - game/world/realm_environment.tres
+      - game/world/materials/mat_floor.tres
+      - game/world/materials/mat_wall.tres
+      - game/world/materials/mat_accent.tres
+      - game/world/materials/mat_glass.tres
+      - game/world/materials/mat_warning.tres
+      - game/world/vps_tower.gd
+      - game/world/vps_tower.tscn
+      - game/tests/test_world_assets.gd
+    validation:
+      - "tools/run_tests.sh test_world_assets.gd -> 9 bestanden, 0 fehlgeschlagen, Exit 0"
+      - >
+        Kanon-Prüfung im Test: VpsTower erzeugt zur Laufzeit exakt 48
+        Fensterinstanzen (belegte Homelab-Containerzahl) und liegt auf
+        Collision-Layer 1.
+      - "Handgeschriebene .tres-Dateien laden fehlerfrei, alle Properties akzeptiert"
+    evidence:
+      - game/world/realm_environment.tres
+      - game/world/vps_tower.gd
+      - game/tests/test_world_assets.gd
+    last_updated: 2026-09-15
+
+  - id: T-013
+    name: Lizenz- und Asset-Dokumentation
+    type: documentation
+    status: done
+    owner: lead-architect
+    model_class: lead
+    scope: >
+      ASSETS.md mit Lizenzregeln, Blender-Pipeline (1 Unit = 1 Meter, -Y als
+      Blickrichtung, Metallic/Roughness, glTF-taugliche Materialeingänge),
+      Exportcheckliste, Modellbudgets und Herkunftsnachweis je Fremdasset.
+      Nur CC0, Public Domain oder eindeutig kompatibel.
+      Beim Hauptagenten geblieben statt delegiert: Lizenzentscheidungen sind
+      laut Auftrag Abschnitt 0 ausdrücklich nicht delegierbar.
+    dependencies: [T-006]
+    inputs:
+      - docs/research/asset-inventory.md
+    outputs:
+      - docs/ASSETS.md
+    validation:
+      - "Fremdasset-Tabelle ist leer und als leer gekennzeichnet — derzeit kein Fremdasset im Repo"
+      - >
+        Abschnitt 3 nach dem Inventurbefund korrigiert: kein Fotoarchiv,
+        sondern Web-Monorepo; geplante Poster-Textur als hinfällig markiert.
+      - >
+        370 lokale Schriftdateien bewusst NICHT übernommen; es bleibt bei Godots
+        Standardschrift. Keine Lizenzvermutung notiert, damit sie nicht später
+        als geprüft gelesen wird.
+    evidence:
+      - docs/ASSETS.md
+    last_updated: 2026-09-15

@@ -1,0 +1,16 @@
+; Warnfarbe (#ffb347) mit Emission.
+;
+; Reserviert für Boss-Telegraphen und Gefahrenzonen. Auftrag Abschnitt 26 verlangt
+; sichtbare Boss-Vorwarnungen — dieses Material ist ihr einziger Träger. Es darf
+; nirgends sonst auftauchen, sonst verliert die Warnung ihre Bedeutung.
+
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "Warnung (Telegraph)"
+albedo_color = Color(1, 0.702, 0.278, 1)
+roughness = 0.4
+metallic = 0.0
+emission_enabled = true
+emission = Color(1, 0.702, 0.278, 1)
+emission_energy_multiplier = 1.8

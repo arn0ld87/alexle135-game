@@ -1,0 +1,135 @@
+; Hub-Szene "Leipzig-Knoten / Homelab-Dorf".
+;
+; Enthält absichtlich fast keine Geometrie: Das Blockout erzeugt HubBlockout aus
+; einer Datentabelle, die 48 Container-Fenster erzeugt VpsTower. Diese Datei ist
+; Verdrahtung und Inhaltsplatzierung — so bleibt sie beim Art Pass in M3 lesbar
+; und der Austausch von Blockout gegen Blender-Meshes betrifft eine Zeile.
+;
+; Der M1-Spielablauf, den die Platzierungen hier ergeben:
+;   Spawn -> AS ansprechen (Quest "Seite down") -> Kiste öffnen (Schwert ed25519)
+;   -> Bitrot-Schleim besiegen -> Schlüssel aufnehmen -> zurück zu AS (Quest erledigt)
+;   -> Tor aufschließen -> Ausgang zum Terminal-Ufer
+;
+; Höhenangaben: Der Platz hat Oberkante y = 0, die Terrasse y = 1,5.
+
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scenes/hub.gd" id="1_hub"]
+[ext_resource type="Environment" path="res://world/realm_environment.tres" id="2_env"]
+[ext_resource type="Script" path="res://world/hub_blockout.gd" id="3_blockout"]
+[ext_resource type="PackedScene" path="res://world/vps_tower.tscn" id="4_tower"]
+[ext_resource type="PackedScene" path="res://player/player.tscn" id="5_player"]
+[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="6_hud"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="7_pause"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/npc_dialogue.tscn" id="8_npc"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/chest.tscn" id="9_chest"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/item_pickup.tscn" id="10_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/locked_door.tscn" id="11_door"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/checkpoint.tscn" id="12_checkpoint"]
+
+[node name="Hub" type="Node3D"]
+script = ExtResource("1_hub")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -38, 0)
+light_color = Color(0.62, 0.74, 0.95, 1)
+light_energy = 0.55
+shadow_enabled = true
+directional_shadow_max_distance = 60.0
+
+[node name="Blockout" type="Node3D" parent="."]
+script = ExtResource("3_blockout")
+
+[node name="VpsTower" parent="." instance=ExtResource("4_tower")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1.5, -15)
+
+; Y = 0,1: Der Ursprung der Spielfigur liegt an den Füßen, nicht in der Mitte.
+; Muss mit HubBlockout.SPAWN_POSITION übereinstimmen.
+[node name="Player" parent="." instance=ExtResource("5_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8)
+
+[node name="HUD" parent="." instance=ExtResource("6_hud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("7_pause")]
+
+; --- Mentor AS auf dem Podest ---------------------------------------------
+; Startet die erste Hauptquest und schließt sie ab, sobald der Spieler den
+; Terminal-Schlüssel hat. Tonlage nach docs/RESEARCH.md: Problem zuerst,
+; Werkzeug danach; kein Überschwang, kein Marketingsprech.
+
+[node name="AS" parent="." instance=ExtResource("8_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, -2)
+prompt_text = "Mit AS sprechen"
+speaker_name = "AS"
+lines = PackedStringArray("alexle135.de ist down. Nicht langsam. Weg.", "Ein Chaos-Paket hat das Wissensnetz zersplittert: korruptierter Deploy, dunkle Middleware.", "Bevor du irgendwas reparierst, brauchst du eine Shell. In der Kiste da liegt eine.", "Erst Problem, dann Werkzeug. In der Reihenfolge.", "Und draußen läuft was herum, das aus dem Paket gekrochen ist. Pass auf.")
+lines_after_completion = PackedStringArray("Schlüssel hast du. Dann raus durchs Tor.", "Das Terminal-Ufer ist offline. Elf Missionen, keine davon erreichbar.", "Ein Schritt nach dem anderen. Und schreib auf, was du änderst.")
+starts_quest_id = "q_seite_down"
+completes_quest_id = "q_seite_down"
+required_item_to_complete = "key_terminal"
+
+; --- Kiste mit dem Schwert ed25519 ----------------------------------------
+; one_shot bleibt auf dem Standard true: Ein zweites Schwert gibt es nicht,
+; auch nicht nach dem Laden eines Speicherstands.
+
+[node name="ChestSword" parent="." instance=ExtResource("9_chest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.4, 1)
+flag_id = "hub_chest_sword"
+prompt_text = "Kiste öffnen"
+item_id = "sword_ed25519"
+item_count = 1
+packets = 15
+
+; --- Terminal-Schlüssel, hinter der Werkstatt ------------------------------
+; Absichtlich abseits der Sichtlinie vom Spawn: Der Spieler muss den Platz
+; einmal umrunden und läuft dabei am Gegner vorbei.
+
+[node name="KeyTerminal" parent="." instance=ExtResource("10_pickup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.5, -12)
+flag_id = "hub_key_terminal_taken"
+prompt_text = "Schlüssel aufnehmen"
+item_id = "key_terminal"
+item_count = 1
+
+; --- Erstes Herzcontainer-Fundstück ---------------------------------------
+; Belohnung fürs Erkunden der Terrasse. auto_pickup, damit Erkundung sich
+; ohne zusätzlichen Tastendruck belohnt.
+
+[node name="HeartTerrace" parent="." instance=ExtResource("10_pickup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2.0, -13)
+flag_id = "hub_heart_terrace"
+prompt_text = "Herzcontainer"
+auto_pickup = true
+is_heart_container = true
+
+; --- Tor zum Terminal-Ufer -------------------------------------------------
+; Sitzt in der Lücke der Südmauer. Ohne key_terminal bleibt es zu, und der
+; Türkörper blockiert weiterhin physisch.
+
+[node name="GateTerminal" parent="." instance=ExtResource("11_door")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+flag_id = "hub_gate_terminal_open"
+prompt_text = "Tor aufschließen"
+required_key_id = "key_terminal"
+consume_key = true
+
+; --- Checkpoints -----------------------------------------------------------
+; Der Spawn-Checkpoint speichert NICHT automatisch. Sonst würde ein Spieler,
+; der ohne Laden neu startet und über den Spawn läuft, seinen gespeicherten
+; Fortschritt überschreiben. Er dient nur als Respawn-Punkt.
+
+[node name="CheckpointSpawn" parent="." instance=ExtResource("12_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 8)
+checkpoint_id = "hub_spawn"
+autosave = false
+
+; Der Torcheckpoint speichert: Er liegt hinter Kampf und Schlüsselsuche,
+; also nach dem Fortschritt, der erhalten bleiben soll.
+
+[node name="CheckpointGate" parent="." instance=ExtResource("12_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 16)
+checkpoint_id = "hub_gate"
+autosave = true
+save_slot = 0

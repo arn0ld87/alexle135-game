@@ -1,0 +1,11 @@
+; Blockout-Wandmaterial. Etwas heller als der Boden, damit Kanten ohne
+; Beleuchtungstrick lesbar sind.
+
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "Wand (Blockout)"
+albedo_color = Color(0.114, 0.149, 0.208, 1)
+roughness = 0.7
+metallic = 0.1
+metallic_specular = 0.35

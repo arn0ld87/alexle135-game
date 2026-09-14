@@ -1,0 +1,24 @@
+[project]
+name = "alexle-realm-tools"
+version = "0.1.0"
+description = "Hilfsskripte für Alexle Realm (ARG-Prüfung, Blender-Export)"
+requires-python = ">=3.12"
+dependencies = ["pyyaml>=6.0"]
+
+# Das Spiel selbst ist Godot/GDScript. Python existiert hier nur für
+# Werkzeuge unter tools/ und blender/.
+
+[tool.basedpyright]
+include = ["tools", "blender"]
+typeCheckingMode = "standard"
+
+# YAML und die Blender-API liefern unstrukturierte bzw. extern definierte
+# Daten. Auf "Any ist verboten" zu bestehen würde hier nur zu Scheintypen
+# führen, die nichts prüfen. Die Skripte validieren die Struktur selbst.
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+reportMissingModuleSource = false

@@ -1,0 +1,22 @@
+; Glasfläche für Fassaden und Panels.
+;
+; Das ist die 3D-Übersetzung des Glassmorphism-Motivs der Website: halbtransparent,
+; scharfe Kante, schwache Eigenhelligkeit. Kein kopierter UI-Effekt — in 3D entsteht
+; der Look über Material und Beleuchtung (docs/RESEARCH.md, Annahme A5).
+;
+; cull_mode = 2 (disabled) zeigt Rück- und Vorderseite, damit eine einzelne Fläche
+; auch von innen sichtbar bleibt.
+
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "Glas (Fassade)"
+transparency = 1
+albedo_color = Color(0.075, 0.102, 0.149, 0.82)
+roughness = 0.12
+metallic = 0.25
+metallic_specular = 0.6
+cull_mode = 2
+emission_enabled = true
+emission = Color(0.12, 0.22, 0.36, 1)
+emission_energy_multiplier = 0.35

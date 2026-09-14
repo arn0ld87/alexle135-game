@@ -5,7 +5,7 @@
 
 [resource]
 resource_name = "Wand (Blockout)"
-albedo_color = Color(0.114, 0.149, 0.208, 1)
+albedo_color = Color(0.171, 0.142, 0.108, 1)
 roughness = 0.7
 metallic = 0.1
 metallic_specular = 0.35

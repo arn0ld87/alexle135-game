@@ -104,8 +104,8 @@ func _build_windows() -> void:
 	multi.mesh = window_mesh
 	multi.instance_count = CONTAINER_COUNT
 
-	var lit: Color = Color(0.302, 0.639, 1.0)      # #4da3ff — Container läuft
-	var dark: Color = Color(0.06, 0.08, 0.11)      # Container aus
+	var lit: Color = Color(0.697, 0.578, 0.439)    # #B29370 — Container läuft
+	var dark: Color = Color(0.092, 0.076, 0.058)   # Container aus
 
 	# Deterministisch: derselbe Seed liefert bei jedem Start dasselbe Muster.
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()

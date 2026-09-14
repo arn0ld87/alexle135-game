@@ -1,11 +1,11 @@
-; Blockout-Bodenmaterial. Dunkler Grund mit Blaustich (#0c0f16 aufgehellt),
+; Blockout-Bodenmaterial. Warmer dunkler Grund (#1b1611 aufgehellt),
 ; matt, damit Emission-Akzente darauf lesbar bleiben.
 
 [gd_resource type="StandardMaterial3D" format=3]
 
 [resource]
 resource_name = "Boden (Blockout)"
-albedo_color = Color(0.075, 0.09, 0.125, 1)
+albedo_color = Color(0.105, 0.087, 0.066, 1)
 roughness = 0.85
 metallic = 0.05
 metallic_specular = 0.3

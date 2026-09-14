@@ -10,10 +10,10 @@ const HEART_SIZE: float = 28.0
 const HEART_GAP: float = 4.0
 const FLASH_DURATION: float = 0.15
 
-const COLOR_EMPTY: Color = Color(0.164706, 0.192157, 0.25098)
+const COLOR_EMPTY: Color = Color(0.223529, 0.184314, 0.141176)
 const COLOR_FULL: Color = Color(1.0, 0.352941, 0.431373)
 const COLOR_FLASH: Color = Color(1.0, 1.0, 1.0)
-const COLOR_BORDER: Color = Color(0.113725, 0.14902, 0.207843)
+const COLOR_BORDER: Color = Color(0.172549, 0.141176, 0.109804)
 
 var _max_hearts: int = GameState.START_HEARTS
 var _current_quarters: int = GameState.START_HEARTS * GameState.QUARTERS_PER_HEART

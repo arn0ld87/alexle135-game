@@ -183,27 +183,38 @@ prozedural oder stammen aus CC0-Quellen.
 
 ## 5. Art Direction
 
-Die Werte setzen die **Auftragsvorgabe** um (dunkel, Blau-Akzent, Glas, Terminal). Sie sind
-ausdrücklich **nicht** die aktuelle Website-Palette — die ist warm-monochrom, siehe
-Abschnitt 1.3 samt Begründung dieser Entscheidung.
+Die Werte setzen die **Auftragsvorgabe** um (dunkel, Blau-Akzent, Glas, Terminal) und
+übernehmen dabei die **warm-monochrome Basis der Website**. Blau bleibt Akzent, ist aber
+nun die einzige kalte Farbe im Bild und damit als Signal noch eindeutiger. Entschieden am
+2026-09-15, siehe Abschnitt 1.3 und STATUS.md R11.
+
+Umgerechnet wurde bei gleichbleibender Luminanz (Y = 0,2126 R + 0,7152 G + 0,0722 B).
+Die Helligkeitsstaffelung zwischen Himmel, Boden, Wand und Nebel ist dadurch unverändert —
+nur der Farbton hat gewechselt.
 
 | Rolle | Hex | Einsatz |
 |---|---|---|
-| Grund | `#0c0f16` | Hintergrund, Nebelfarbe, UI-Grund |
-| Panel (Glas) | `#131a26` bei ca. 82 % | UI-Panels, Fensterflächen am VPS-Turm |
-| Rand | `#1d2635` | 1-px-Kanten, Kachelfugen |
-| Akzent Blau | `#4da3ff` | Interaktives, Schwertspur, Quest-Marker |
+| Grund | `#0d0b08` | Himmel oben, dunkelster Punkt |
+| Nebel / UI-Grund | `#1e1913` bei ca. 82 % | Nebelfarbe, UI-Panels, Glasflächen |
+| Rand | `#2c241c` | 1-px-Kanten, Kachelfugen |
+| Wand | `#2b241b` | Blockout-Wand, heller als der Boden |
+| Fensterlicht | `#b29370` | VPS-Turm, laufender Container — **nicht** interaktiv |
+| Akzent Blau | `#4da3ff` | Interaktives, Schwertspur, Quest-Marker, Checkpoint |
 | Akzent hell | `#7cc4ff` | Hover, aktiver Zustand, Emission |
-| Text | `#e6edf7` | Fließtext |
-| Text gedimmt | `#8b98ab` | Nebeninfo, Platzhalter |
+| Text | `#efeae0` | Fließtext |
+| Text gedimmt | `#9c9685` | Nebeninfo, Platzhalter |
 | Herz | `#ff5a6e` | Lebensanzeige |
 | Warnung | `#ffb347` | Boss-Telegraph, Gefahr |
 
 Leitlinien:
 
-- **Dunkel, nicht schwarz.** Der Grundton hat Blaustich. Reines Schwarz nur als Vignette.
+- **Dunkel, nicht schwarz.** Der Grundton ist warm (bräunliches Dunkel wie auf der Website).
+  Reines Schwarz nur als Vignette.
 - **Blau ist Bedeutung, nicht Dekoration.** Was blau leuchtet, ist benutzbar. Wer diese Regel für
-  Deko bricht, zerstört die Lesbarkeit der Welt.
+  Deko bricht, zerstört die Lesbarkeit der Welt. Auf dem warmen Grund ist Blau die einzige kalte
+  Farbe — deshalb gilt die Regel jetzt strenger, nicht lockerer. Die VPS-Turm-Fenster wurden
+  aus genau diesem Grund von Blau auf warmes Fensterlicht umgestellt: Der Turm ist ein
+  Wahrzeichen, kein Interaktionsziel.
 - **Glas in 3D über Material, nicht über UI-Kopie.** Halbtransparente Flächen mit schwacher
   Emission und scharfer Kante. Kein Bloom-Gewitter.
 - **Terminal-Ästhetik heißt Monospace und Raster,** nicht grüner Text auf schwarz. Keine

@@ -131,6 +131,7 @@ func _process_chase() -> void:
 		var direction: Vector3 = to_player.normalized()
 		velocity.x = direction.x * move_speed
 		velocity.z = direction.z * move_speed
+		_face_player()
 	else:
 		velocity.x = 0.0
 		velocity.z = 0.0
@@ -181,6 +182,11 @@ func _set_state(new_state: State) -> void:
 	match new_state:
 		State.TELEGRAPH:
 			_state_timer = telegraph_time
+			# Beim Eintritt in die Vorwarnung wird die Richtung EINMAL festgelegt
+			# und danach nicht mehr korrigiert. Deshalb ist Ausweichen überhaupt
+			# möglich: wer sich während der Vorwarnung um den Gegner herumbewegt,
+			# steht beim Schlag nicht mehr in der Schlagrichtung.
+			_face_player()
 			if _telegraph != null:
 				_telegraph.visible = true
 		State.ATTACK:
@@ -261,6 +267,26 @@ func is_dead() -> bool:
 ## Nur für Tests und Debug. Setzt den Zustand ohne Ein-/Austritts-Seiteneffekte.
 func force_state(state: int) -> void:
 	_state = state as State
+
+
+## Dreht den Körper um die Y-Achse zum Spieler.
+##
+## Nicht kosmetisch, sondern kampfentscheidend: Die HitBox der Gegnerszenen
+## sitzt nach VORN versetzt (lokal -Z, siehe docs/ASSETS.md). Ohne diese Drehung
+## schlägt ein Gegner immer in Richtung der Weltachse -Z, egal wo der Spieler
+## steht — er verfolgt ihn dann korrekt, trifft aber nur zufällig.
+func _face_player() -> void:
+	var player: Node3D = _get_player()
+	if player == null:
+		return
+	var to_player: Vector3 = player.global_position - global_position
+	to_player.y = 0.0
+	if to_player.length() < 0.001:
+		return
+	var direction: Vector3 = to_player.normalized()
+	# Vorn ist -Z: gesucht ist der Winkel, für den die gedrehte -Z-Achse
+	# (-sin y, 0, -cos y) auf `direction` zeigt.
+	rotation.y = atan2(-direction.x, -direction.z)
 
 
 ## INF, wenn kein Knoten der Gruppe "player" existiert — der Normalfall in

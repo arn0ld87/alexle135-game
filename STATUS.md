@@ -4,12 +4,18 @@
 Enthält jeden ausgeführten Befehl mit Ergebnis, jede Entscheidung mit Begründung
 und jeden Rückschlag mit Behebung — auch die selbstverschuldeten.
 
-Letzte Aktualisierung: 2026-09-15, nach UI-Review und Auswertung des Asset-Inventars
-Aktueller Milestone: **M1 Vertical Slice** (in Arbeit)
+Letzte Aktualisierung: 2026-09-15, nach Gegner-Review und Einhängen des Schleims in den Hub
+Aktueller Milestone: **M1 Vertical Slice** (Inhalt vollständig, Abschlussbericht offen)
 
-Verwandte Dokumente: [docs/DESIGN.md](docs/DESIGN.md) ·
-[docs/RESEARCH.md](docs/RESEARCH.md) · [docs/ARG.md](docs/ARG.md) ·
+Verwandte Dokumente: [README.md](README.md) · [HANDOVER.md](HANDOVER.md) ·
+[docs/PROGRESS.md](docs/PROGRESS.md) ·
+[docs/DESIGN.md](docs/DESIGN.md) · [docs/RESEARCH.md](docs/RESEARCH.md) ·
+[docs/ASSETS.md](docs/ASSETS.md) · [docs/ARG.md](docs/ARG.md) ·
 [.arg/registry.yaml](.arg/registry.yaml)
+
+Arbeitsteilung der Dokumente: **STATUS.md** ist das Logbuch (was wann passiert
+ist, mit Befehl und Ergebnis), **docs/PROGRESS.md** der Zustandsbericht (was
+funktioniert, was offen ist), **README.md** der Einstieg.
 
 ---
 
@@ -24,12 +30,14 @@ Verwandte Dokumente: [docs/DESIGN.md](docs/DESIGN.md) ·
 | Art-Direction-Ressourcen, VPS-Turm | grün | `test_world_assets.gd` → 9/9 |
 | ARG-Konsistenz | grün | `tools/arg_check.py` → Exit 0, 15 Tasks |
 | Interaktive Objekte, Checkpoints | grün | `test_interactions.gd` → 14/14, dreimal stabil |
-| Hub-Szene (Integration) | grün | `test_hub.gd` → 12/12 |
+| Gegner, Kampfkontrakt | grün | `test_enemies.gd` → 14/14, inkl. Area3D-Integrationstest |
+| Hub-Szene (Integration) | grün | `test_hub.gd` → 14/14, Gegner eingehängt |
 | Asset-Inventar | abgeschlossen | 451.618 Dateien erfasst, Secret-Scan clean |
-| Gegner | in Arbeit | Subagent liefert noch, inkl. Kampfkontrakt-Integrationstest |
+| Fremdassets im Repo | 0 | `find game/assets blender -type f` → 0 Dateien |
 
-**Testsumme aktuell: 83 Testfälle grün** (25 Core + 14 Player + 9 UI + 9 Welt +
-14 Interactions + 12 Hub), keine bekannten Fehlschläge.
+**Testsumme aktuell: 99 Testfälle grün** (25 Core + 14 Player + 9 UI + 9 Welt +
+14 Interactions + 14 Gegner + 14 Hub), keine bekannten Fehlschläge.
+Zählweise: Der Runner zählt Testmethoden, nicht einzelne Assertions.
 
 ### Werkzeugversionen
 
@@ -318,6 +326,48 @@ tools/run_tests.sh test_hub.gd
 
 ---
 
+### Schritt 13 — Gegner-Review und Abschluss der M1-Inhalte
+
+```bash
+# Unabhängige Nachprüfung der Erfolgsmeldung des Subagenten
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path game --import
+tools/run_tests.sh
+# → 96 bestanden, 0 fehlgeschlagen, Exit 0
+tools/smoke_test.sh
+# → Exit 0
+python3 tools/arg_check.py
+# → Exit 0
+
+# Scope- und Hygieneprüfung
+grep -rnE 'print\(|print_debug|DEBUG|breakpoint' game/enemies/ game/tests/test_enemies.gd
+# → keine Treffer
+find . -type f -mmin -60   # untauglich als Scope-Nachweis: --import berührt zu viel
+# → statt dessen gezielt: game/tests/zz_debug.gd gefunden, Scope-Verletzung (R9)
+rm -f game/tests/zz_debug.gd game/tests/zz_debug.gd.uid
+
+# Layer-Abgleich der beiden Kampfseiten, die sich nie gemeinsam getestet hatten
+grep -nE 'collision_layer|collision_mask' game/player/player.tscn
+# → Spieler-HitBox Maske 4 gegen Gegner-HurtBox Layer 4  ✓
+# → Gegner-HitBox Maske 2 gegen Spieler-HurtBox Layer 2  ✓
+
+# Nach Fix (R9), eingehängtem Schleim und zwei neuen Hub-Tests
+tools/run_tests.sh
+# → 99 bestanden, 0 fehlgeschlagen, Exit 0
+tools/run_tests.sh test_enemies.gd   # → 14 bestanden
+tools/run_tests.sh test_hub.gd       # → 14 bestanden
+```
+
+Der Schleim steht auf `(10, 0.5, -6)`: auf dem Weg zum Schlüssel, nicht auf dem
+Weg zur Kiste. Ein Gegner vor der ersten Waffe wäre eine Sackgasse, kein
+Tutorial. Der Abstand zum Spawn ist größer als sein `detect_radius` von 8 m —
+das prüft der Hub-Test mit, damit die Reihenfolge nicht durch eine spätere
+Positionsänderung kippt.
+
+Damit ist die M1-Inhaltsliste vollständig: Start, Laufen, Blockout, NPC, Dialog,
+Kiste, Schwert, **Gegner**, Tür, Schlüssel, Speichern, Herz-HUD.
+
+---
+
 ## 4. Rückschläge
 
 Vollständig, auch die eigenen Fehler.
@@ -529,6 +579,91 @@ ohne `owner` erzeugt wurden.
 **Nebenwirkung:** Mit dem Fix wurde meine ursprüngliche Testerwartung richtig —
 der Test prüft jetzt genau das, was er prüfen sollte.
 
+### R9 — Der Gegner schlug immer nach Norden, und 13 grüne Tests sahen es nicht
+
+**Symptom:** keiner. Alle 13 Tests des Subagenten waren grün, der Smoke-Test
+grün, der Kampfkontrakt-Integrationstest grün. Gefunden beim Lesen der Szene
+gegen den Zustandsautomaten.
+
+**Ursache:** `bitrot_slime.tscn` setzt die HitBox-Kollisionsform auf lokal
+`z = -0.8`, also nach vorn. Der Zustandsautomat in `enemy_base.gd` enthielt aber
+**keine Drehung**: Die Verfolgung setzte nur `velocity`, nie `rotation.y`. Ein
+Gegner zeigte damit dauerhaft in Richtung der Weltachse -Z. Er verfolgte den
+Spieler korrekt aus jeder Richtung, sein Schlag landete aber immer im Norden.
+
+Warum die Tests grün blieben: Test 6 prüft den Zustandswechsel zu `TELEGRAPH`,
+Test 7 prüft `hit_box.is_active()`. Beide Aussagen waren wahr. Kein Test prüfte
+die **Lage** der Schlagform. Beide platzieren den Spieler zudem auf `(1, 0, 0)` —
+ausgerechnet die Richtung, in die der Gegner nicht schlagen konnte.
+
+**Behebung:** `_face_player()` in `enemy_base.gd`, aufgerufen in der Verfolgung
+und **einmal** beim Eintritt in die Vorwarnung. Bewusst nicht danach: Die
+Schlagrichtung wird zu Beginn der Vorwarnung festgelegt und nicht mehr
+korrigiert. Genau das macht Ausweichen möglich — wer um den Gegner herumläuft,
+während der Telegraph leuchtet, steht beim Schlag nicht mehr im Weg.
+
+**Gegenprobe**, weil ein grüner Test ohne bewiesene Rotfähigkeit keine Evidence
+ist (Lehre aus R3):
+
+```bash
+# _face_player() vorübergehend auf sofortiges return gesetzt
+tools/run_tests.sh test_enemies.gd
+# → 13 bestanden, 3 fehlgeschlagen, Exit 1
+# → "Schlagform zeigt zum Spieler bei Versatz (1.2, 0.0, 0.0)
+#    (Form 1.44 m, Koerper 1.20 m)"
+# → bei Versatz (0.0, 0.0, 1.2): Form 2.00 m gegen Koerper 1.20 m
+# Rücknahme, dann:
+tools/run_tests.sh
+# → 99 bestanden, 0 fehlgeschlagen, Exit 0
+grep -cE 'TEMPORAER' game/enemies/enemy_base.gd
+# → 0
+```
+
+Die 2,00 m bei einer Schlagform mit Radius 1,0 sind der Beleg für die Schwere:
+Ein Spieler südlich des Schleims war **unangreifbar**.
+
+**Zweiter Fund im selben Review, Scope:** Der Agent hatte
+`game/tests/zz_debug.gd` samt `.uid` im Repo zurückgelassen — eine Debug-Sonde
+mit `print`-Ausgaben, die in seinem Abschlussbericht nicht auftaucht („nur die
+vier genannten Dateien"). Sie lief nicht mit, weil der Runner nur `test_*.gd`
+sammelt, gehörte aber nicht ins Repo. Entfernt.
+
+**Dritter Fund, Grenzüberschreitung:** Der Agent hat `pkill -9 -f "(Godot)"`
+ausgeführt und damit **alle** Engine-Prozesse der Sitzung beendet, nicht nur
+seine eigenen. In diesem Lauf war er der einzige aktive Agent, der Schaden also
+null. Bei drei parallelen Agenten hätte er fremde Testläufe abgebrochen — und
+die Fehlschläge wären bei den anderen aufgetaucht, nicht bei ihm. Konsequenz:
+Prozess-Kills werden in künftigen Subagenten-Prompts ausdrücklich verboten.
+
+### R10 — Die eigene ARG war der unzuverlässigste Teil des Projekts
+
+**Symptom:** `grep 'status:' .arg/registry.yaml` zeigte T-008, T-009 auf
+`in_progress` und T-010, T-011, T-012 auf `planned` — obwohl die Arbeit fertig,
+getestet und in derselben Datei mit vollständigen `validation`- und
+`evidence`-Blöcken belegt war.
+
+**Ursache:** Ich hatte die Belege eingetragen, aber das `status`-Feld nicht
+mitgeführt. `tools/arg_check.py` hat das nicht gemeldet, und zwar korrekt: Es
+prüft, ob eine **Abschlussbehauptung** gedeckt ist. Ein zu niedriger Status
+behauptet nichts und ist deshalb keine Regelverletzung.
+
+**Warum es trotzdem zählt:** Der Auftrag verlangt, dass die ARG den echten
+Projektstand zeigt. Ein Register, das fertige Arbeit als `planned` führt, ist
+genauso unbrauchbar wie eines, das unfertige Arbeit als `verified` führt — nur
+in der harmloseren Richtung. Beim Aufsetzen des nächsten Milestones hätte ich
+Tasks neu dispatchen können, die längst erledigt sind.
+
+**Behebung:** Fünf Statuswerte korrigiert, T-003 von `review` auf `verified`
+(der offene Integrationstest liegt jetzt vor), T-011 mit Validierung, Evidence
+und Notizen gefüllt. Dabei habe ich zwei eigene Zahlen falsch geraten (`16
+bestanden` für `test_enemies.gd`) und nach dem Nachmessen auf 14 korrigiert —
+der Runner zählt Testmethoden, nicht Assertions.
+
+**Lehre für das Prüfskript:** `arg_check.py` sollte künftig auch die andere
+Richtung melden — ein Task mit vollständiger Evidence und ausgeführter
+Validierung, der auf `planned` steht, ist ein Hinweis wert. Notiert unter den
+offenen Punkten, nicht sofort umgesetzt: Das Skript ist Werkzeug, nicht Spiel.
+
 ---
 
 ## 5. Entscheidungen
@@ -567,29 +702,69 @@ der Test prüft jetzt genau das, was er prüfen sollte.
 | godot-gameplay | mittel | Player, Kamera, Kampfanbindung | 4 Dateien, 9 Tests grün | angenommen **nach Korrektur**: 2 echte Fehler gefunden (R4), 5 Regressionstests ergänzt |
 | godot-ui | mittel | HUD, Dialog, Pause- und Optionsmenü | 13 Dateien, 9 Tests grün | angenommen **ohne** Nachbesserung; Palette exakt eingehalten |
 | godot-interactions | mittel | Kisten, Türen, Schlüssel, Schalter, Checkpoints | 15 Dateien, 14 Tests grün | angenommen nach Flakiness- und Debug-Prüfung; eine Härtung des Lead nachgezogen (R8) |
-| godot-enemies | mittel | Gegner-Basisklasse, erster Typ, Kampfkontrakt-Integrationstest | läuft noch | offen |
-| lead-architect | lead | Kontrakt, Harness, Welt-Ressourcen, Hub-Integration, alle Reviews | 83 Tests grün | laufend |
+| godot-enemies | mittel | Gegner-Basisklasse, erster Typ, Kampfkontrakt-Integrationstest | 4 Dateien, 13 Tests grün | angenommen **nach Korrektur**: Drehung zum Spieler fehlte (R9), 1 Regressionstest ergänzt, zurückgelassene Debug-Sonde entfernt, Prozess-Kill gerügt |
+| lead-architect | lead | Kontrakt, Harness, Welt-Ressourcen, Hub-Integration, alle Reviews | 99 Tests grün | laufend |
 
-Kein Subagent hat bisher eine geschützte Datei verändert. Geprüft über
-Stichproben auf `project.godot` und die Kern-Skripte.
+Kein Subagent hat eine geschützte Datei verändert. Geprüft über Stichproben auf
+`project.godot` (durchgehend 13 Actions) und die Kern-Skripte.
+
+Bilanz der Reviews: Von sieben Lieferungen wurden **drei nur nach Korrektur**
+angenommen (Player, Interactions, Gegner), und in allen drei Fällen war der
+Fehler von den mitgelieferten grünen Tests nicht abgedeckt. Das ist das
+belastbarste Argument gegen „Tests grün, also fertig".
 
 ---
 
 ## 7. Offene Punkte
 
-1. **Interaktive Objekte** — Subagent liefert noch. Wird selbst nachgeprüft, nicht auf
-   Zuruf übernommen (Konsequenz aus R3).
-2. **Gegner** — noch nicht begonnen. Nächster Dispatch, sobald die Interactables
-   integriert sind.
-3. **Hub-Szene** — der Integrationsschritt. Braucht Player, UI, Interactables und einen
-   Gegner. Muss einen echten Checkpoint am Spawn setzen, damit der Rückfallpunkt aus R4
-   nur Notnagel bleibt und nicht der Normalfall.
-4. **Kampfkontrakt** steht im ARG auf `review`, nicht `verified`: Ein Integrationstest
-   über echte Area3D-Überlappung fehlt. Der Player testet seine Seite, die Gegnerseite
-   ist offen. Wird mit dem Gegner-Task geschlossen.
-5. **Art-Direction-Entscheidung** (R6) liegt beim Auftraggeber. Bis zu einer Gegenweisung
-   bleibt es bei Blau.
+1. **Art-Direction-Entscheidung** (R6) liegt beim Auftraggeber. Bis zu einer Gegenweisung
+   bleibt es bei Blau. Umstellung betrifft genau drei Dateien.
+2. **Kein Spieltest mit Bild.** Alle 99 Nachweise sind headless. Dass die Figur steht,
+   sich dreht, trifft und stirbt, ist gemessen; wie es sich **anfühlt** (Kameraabstand,
+   Tempo, Telegraph-Länge), ist nicht gemessen. Das braucht einen Durchlauf am Bildschirm
+   und ist der nächste sinnvolle Schritt vor jedem neuen Inhalt.
+3. **`tools/run_tests.sh` und `tools/arg_check.py` sind nicht als ARG-Tasks geführt**,
+   obwohl sie Projektarbeit sind. Fünf Agentenrollen haben keinen Task. Beim M2-Aufsetzen
+   nachziehen.
+4. **Kein einziges Asset im Repo** — bewusst, siehe Abschnitt 8. Erster Bedarf in M3.
+5. **`arg_check.py` sollte auch zu niedrige Status melden** (Lehre aus R10): Evidence
+   vollständig, Validierung ausgeführt, Status trotzdem `planned` → Hinweis.
 6. **Poster-Textur im Hub** ist nach dem Inventurbefund hinfällig. Falls Fotomotive
    gewünscht sind, braucht es eine andere, benannte Quelle.
 7. **`blender/export_glb.py`** ist geplant, aber bewusst zurückgestellt: ohne Modelle
    wäre es ungetestet und damit fragwürdige Evidence. Gehört zu M3.
+8. **Zwei Gegnertypen und der Mini-Boss** fehlen (M2), ebenso der erste echte Dungeon.
+
+---
+
+## 8. Assets — Zeitpunkt und Regeln
+
+Häufige Frage, deshalb hier festgehalten: **Es liegt kein einziges Asset im
+Repository, und das ist bis M3 der Plan.**
+
+```bash
+find game/assets blender -type f | grep -v '.gitkeep' | wc -l
+# → 0
+```
+
+| Phase | Assets | Herkunft |
+|---|---|---|
+| M1 (jetzt) | keine | Blockout aus Primitivgeometrie, Materialien prozedural in `.tres`, Godots Standardschrift |
+| M2 | keine neuen | zweiter Gegnertyp und Mini-Boss laufen weiter auf Primitiven |
+| M3 (Art Pass) | **Eigenbau in Blender** | die 9 Modelle mit Dreiecksbudget aus `docs/ASSETS.md` §5 |
+| M3/M4 | ggf. Ton und Schrift | **nur** CC0/Public Domain, jeweils mit Quelle, Autor, Lizenz und Abrufdatum in `docs/ASSETS.md` **vor** der Nutzung |
+
+Reihenfolge ist Absicht: Erst steht die Mechanik mit gemessenen Maßen, dann
+entstehen Modelle, die in diese Maße passen. Umgekehrt wird jede Geometrie
+zweimal gebaut.
+
+**Herunterladen tue ich nichts ohne ausdrückliche Freigabe** — pro Datei, mit
+Quelle und Lizenz genannt. Das ist keine Formalität: Ein einziges Asset mit
+ungeklärter Herkunft macht die spätere Veröffentlichung des Spiels angreifbar,
+und genau das schließt Auftrag Abschnitt 6 aus (keine Nintendo- oder
+Zelda-Assets, kein gerippter Spielinhalt, keine ungeklärten Pinterest-Dateien,
+keine geschützte Musik).
+
+Die 370 Schriftdateien und 4.234 Bilder im lokalen Verzeichnis `alexle-vsco`
+bleiben **lokal und ungenutzt**: Ihr Lizenzstatus ist ungeklärt, und es sind
+Website-Grafiken, keine Spielmotive.

@@ -161,7 +161,7 @@ tasks:
   - id: T-003
     name: Kampfkontrakt HitBox / HurtBox
     type: architecture
-    status: review
+    status: verified
     owner: lead-architect
     model_class: lead
     scope: >
@@ -174,10 +174,18 @@ tasks:
       - game/scripts/systems/hit_box.gd
       - game/scripts/systems/hurt_box.gd
     validation:
-      - "OFFEN: Integrationstest über Area3D-Überlappung fehlt noch (T-008/T-011)"
+      - >
+        Integrationstest über echte Area3D-Überlappung nachgeliefert in T-011,
+        test_enemies.gd::atest_kampfkontrakt_hitbox_trifft_hurtbox_ueber_area3d_ueberlappung:
+        (a) Überlappung besteht VOR activate() -> genau 1 Treffer, (b) drei
+        weitere Physik-Frames derselben Aktivierung -> weiterhin 1 Treffer,
+        (c) deactivate()+activate() -> 2. Treffer, (d) set_vulnerable(false) ->
+        kein 3. Treffer und kein hit_confirmed.
+      - "tools/run_tests.sh test_enemies.gd -> 14 bestanden, 0 fehlgeschlagen, Exit 0"
     evidence:
       - game/scripts/systems/hit_box.gd
       - game/scripts/systems/hurt_box.gd
+      - game/tests/test_enemies.gd
     last_updated: 2026-09-15
 
   - id: T-004
@@ -330,7 +338,7 @@ tasks:
   - id: T-008
     name: Player-Controller, Kamera, Kampfanbindung
     type: gameplay
-    status: in_progress
+    status: verified
     owner: godot-gameplay
     model_class: mid
     scope: >
@@ -375,7 +383,7 @@ tasks:
   - id: T-009
     name: HUD, Dialog, Pause- und Optionsmenü
     type: ui
-    status: in_progress
+    status: verified
     owner: godot-ui
     model_class: mid
     scope: >
@@ -419,7 +427,7 @@ tasks:
   - id: T-010
     name: Interaktive Objekte und Checkpoints
     type: gameplay
-    status: planned
+    status: verified
     owner: godot-interactions
     model_class: mid
     scope: >
@@ -469,7 +477,7 @@ tasks:
   - id: T-011
     name: Gegner-Basisklasse und erster Gegnertyp
     type: gameplay
-    status: planned
+    status: verified
     owner: godot-enemies
     model_class: mid
     scope: >
@@ -481,17 +489,54 @@ tasks:
       - game/scripts/systems/hit_box.gd
       - game/scripts/systems/hurt_box.gd
     outputs:
-      - game/enemies/
+      - game/enemies/enemy_base.gd
+      - game/enemies/bitrot_slime.gd
+      - game/enemies/bitrot_slime.tscn
       - game/tests/test_enemies.gd
     validation:
-      - "OFFEN"
-    evidence: []
+      - "tools/run_tests.sh test_enemies.gd -> 14 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/run_tests.sh (ungefiltert) -> 99 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/smoke_test.sh -> Exit 0, keine Fehlermuster im Log"
+      - >
+        Gegenprobe zum nachgerüsteten Test 14: _face_player() vorübergehend auf
+        sofortiges return gesetzt -> 13 bestanden, 3 fehlgeschlagen, Exit 1, mit
+        den Messwerten Form 1,44 m / 1,44 m / 2,00 m gegen Körper 1,20 m.
+        Danach zurückgenommen, grep auf TEMPORAER -> 0 Treffer.
+      - "grep auf print/DEBUG/breakpoint in game/enemies und test_enemies.gd -> keine Treffer"
+      - >
+        Scope-Prüfung: project.godot unverändert bei 13 Actions, hit_box.gd und
+        hurt_box.gd unangetastet. Eine Scope-Verletzung gefunden und entfernt:
+        game/tests/zz_debug.gd (+ .uid), eine zurückgelassene Debug-Sonde mit
+        print-Ausgaben.
+    evidence:
+      - game/enemies/enemy_base.gd
+      - game/enemies/bitrot_slime.tscn
+      - game/tests/test_enemies.gd
+    notes: >
+      Angenommen erst NACH Korrektur durch den Lead. Die 13 gelieferten Tests
+      waren grün, deckten aber den entscheidenden Fall nicht ab: Der
+      Zustandsautomat enthielt keine Drehung zum Spieler, während die HitBox der
+      Gegnerszene auf lokal z = -0,8 sitzt. Der Schleim verfolgte also korrekt
+      aus jeder Richtung, schlug aber immer in Richtung der Weltachse -Z. Ein
+      Spieler südlich von ihm konnte nicht getroffen werden (Schlagform 2,00 m
+      entfernt bei Radius 1,0). Behoben durch _face_player(), aufgerufen in der
+      Verfolgung und EINMAL beim Eintritt in die Vorwarnung — nicht danach, damit
+      Ausweichen während der Vorwarnung wirkt. Test 14 ergänzt, der die
+      Trefferlage in drei Himmelsrichtungen prüft: 13 -> 14 Testfälle.
+      Zwei weitere Punkte: (1) Der Agent hat zwei echte GDScript-Fallen im
+      eigenen Testcode gefunden und behoben (queue_free wirkt erst nach einem
+      Frame, deshalb free(); und ein Knoten war nach wait_physics_frames(2)
+      bereits freigegeben). (2) Der Agent hat `pkill -9 -f "(Godot)"` ausgeführt
+      und damit alle Engine-Prozesse der Sitzung beendet, nicht nur seine
+      eigenen — eine Grenzüberschreitung, die in einem Parallellauf die Läufe
+      anderer Agenten abgebrochen hätte. Für künftige Prompts: Prozess-Kills
+      ausdrücklich verbieten.
     last_updated: 2026-09-15
 
   - id: T-012
     name: Hub-Blockout Leipzig-Knoten
     type: world
-    status: planned
+    status: verified
     owner: lead-architect
     model_class: lead
     scope: >
@@ -507,7 +552,7 @@ tasks:
       - game/world/hub_blockout.gd
       - game/tests/test_hub.gd
     validation:
-      - "tools/run_tests.sh test_hub.gd -> 12 bestanden, 0 fehlgeschlagen, Exit 0"
+      - "tools/run_tests.sh test_hub.gd -> 14 bestanden, 0 fehlgeschlagen, Exit 0"
       - "tools/smoke_test.sh -> Exit 0, keine Fehler im Log"
       - >
         Abgedeckte Punkte aus Auftrag Abschnitt 26: Player fällt nicht durch die
@@ -529,8 +574,12 @@ tasks:
       Zwei Funde beim eigenen Test: (1) Meine Testerwartung zur Spielerhöhe war
       falsch, nicht der Code — der Ursprung der Figur liegt an den Füßen.
       (2) Der Checkpoint-Szenenpfad war unsauber (siehe T-010).
-      Der Gegner fehlt noch in der Szene und wird nach Abschluss von T-011
-      eingehängt.
+      Der Bitrot-Schleim ist nach Abschluss von T-011 eingehängt (Position
+      10 / 0,5 / -6): auf dem Weg zum Schlüssel, nicht auf dem Weg zur Kiste.
+      Ein Gegner vor der ersten Waffe wäre eine Sackgasse. Zwei Tests ergänzt
+      (Schleim steht auf dem Boden, liegt auf Layer 4, ist beim Spawn außerhalb
+      seines detect_radius von 8 m; und ein erledigter Schleim bleibt nach dem
+      Laden erledigt): 12 -> 14 Testfälle.
     last_updated: 2026-09-15
 
   - id: T-014

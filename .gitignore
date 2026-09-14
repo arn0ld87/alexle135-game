@@ -1,0 +1,44 @@
+# Godot 4
+game/.godot/
+game/android/
+game/export_presets.cfg
+game/.import/
+*.translation
+
+# Build-Ausgaben
+build/
+export/
+dist/
+
+# Blender
+*.blend1
+*.blend2
+blender/**/*.blend1
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Secrets — niemals ins Repo
+.env
+.env.*
+*.pem
+*.key
+*_rsa
+*_ed25519
+!game/**/ed25519*.tscn
+!game/**/ed25519*.gd
+secrets/
+credentials.json
+
+# Lokale Assetquellen (bleiben lokal, siehe docs/ASSETS.md)
+assets/_source_private/
+
+# Editor / Tooling
+.vscode/
+.idea/
+*.swp
+__pycache__/
+.venv/

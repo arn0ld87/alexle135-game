@@ -12,7 +12,7 @@
 ;
 ; Höhenangaben: Der Platz hat Oberkante y = 0, die Terrasse y = 1,5.
 
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/hub.gd" id="1_hub"]
 [ext_resource type="Environment" path="res://world/realm_environment.tres" id="2_env"]
@@ -26,6 +26,7 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/item_pickup.tscn" id="10_pickup"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/locked_door.tscn" id="11_door"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/checkpoint.tscn" id="12_checkpoint"]
+[ext_resource type="PackedScene" path="res://enemies/bitrot_slime.tscn" id="13_slime"]
 
 [node name="Hub" type="Node3D"]
 script = ExtResource("1_hub")
@@ -103,6 +104,21 @@ flag_id = "hub_heart_terrace"
 prompt_text = "Herzcontainer"
 auto_pickup = true
 is_heart_container = true
+
+; --- Bitrot-Schleim, zwischen Kiste und Schlüssel --------------------------
+; Steht bewusst NICHT auf dem Weg vom Spawn zu AS, sondern auf dem Weg zum
+; Schlüssel: Der Spieler hat das Schwert dann schon aus der Kiste. Ein Gegner
+; vor der ersten Waffe wäre eine Sackgasse, kein Tutorial.
+;
+; y = 0,5, weil der Ursprung des Schleims in der Kugelmitte liegt (Radius 0,5)
+; und nicht wie bei der Spielfigur an den Füßen.
+;
+; death_flag_id: Ein erledigter Schleim bleibt nach dem Laden erledigt.
+
+[node name="BitrotSlimeHub" parent="." instance=ExtResource("13_slime")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -6)
+enemy_id = "bitrot_slime_hub_01"
+death_flag_id = "hub_slime_defeated"
 
 ; --- Tor zum Terminal-Ufer -------------------------------------------------
 ; Sitzt in der Lücke der Südmauer. Ohne key_terminal bleibt es zu, und der

@@ -338,3 +338,38 @@ func atest_kampfkontrakt_hitbox_trifft_hurtbox_ueber_area3d_ueberlappung() -> vo
 
 	hurt_box.queue_free()
 	hit_box.queue_free()
+
+
+# --- 14. Der Gegner schlägt dorthin, wo der Spieler steht --------------------
+# Regression: Die HitBox der Gegnerszene sitzt auf lokal z = -0,8. Der erste
+# Zustandsautomat enthielt keine Drehung, also zeigte die Schlagrichtung immer
+# nach Welt- -Z. Ein Spieler, der von +X kam, wurde verfolgt und angegriffen,
+# konnte aber nicht getroffen werden. Die Tests 6 und 7 waren grün, weil sie
+# nur den Zustandswechsel und is_active() prüfen, nicht die Trefferlage.
+
+func test_hitbox_zeigt_beim_angriff_zum_spieler() -> void:
+	for offset: Vector3 in [
+		Vector3(1.2, 0.0, 0.0),   # Spieler östlich
+		Vector3(-1.2, 0.0, 0.0),  # westlich
+		Vector3(0.0, 0.0, 1.2),   # südlich (die Richtung, die vorher fehlschlug)
+	]:
+		var slime: BitrotSlime = BITROT_SLIME_SCENE.instantiate() as BitrotSlime
+		add_child(slime)
+		var player: CharacterBody3D = _make_player()
+		add_child(player)
+		player.global_position = offset
+
+		slime._physics_process(0.1)  # IDLE -> CHASE
+		slime._physics_process(0.1)  # CHASE -> TELEGRAPH
+
+		var hit_shape: Node3D = slime.get_node("HitBox/CollisionShape3D") as Node3D
+		var shape_distance: float = hit_shape.global_position.distance_to(player.global_position)
+		var body_distance: float = slime.global_position.distance_to(player.global_position)
+		# Die versetzte Schlagform muss näher am Spieler liegen als der Körper
+		# selbst — sonst schlägt der Gegner an ihm vorbei.
+		_runner.assert_true(shape_distance < body_distance,
+			"Schlagform zeigt zum Spieler bei Versatz %s (Form %.2f m, Körper %.2f m)"
+			% [offset, shape_distance, body_distance])
+
+		player.free()
+		slime.free()

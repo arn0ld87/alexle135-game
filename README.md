@@ -43,11 +43,16 @@ Quelle zurückführbar.
 | HUD, Dialog, Pause und Optionen | grün | 9 Tests |
 | Weltressourcen, VPS-Turm | grün | 9 Tests |
 | Kisten, Türen, Schlüssel, Checkpoints | grün | 14 Tests |
-| Hub-Szene (Integration) | grün | 12 Tests |
-| Gegner | in Arbeit | — |
+| Gegner und Kampfkontrakt | grün | 14 Tests |
+| Hub-Szene (Integration) | grün | 14 Tests |
 
-**83 Testfälle grün**, keine bekannten Fehlschläge. Der aktuelle Stand, alle
+**99 Testfälle grün**, keine bekannten Fehlschläge. Der aktuelle Stand, alle
 Entscheidungen und alle Rückschläge stehen fortlaufend in [STATUS.md](STATUS.md).
+
+Alle Nachweise sind headless. Was **gemessen** ist: dass die Figur steht, sich
+dreht, trifft, stirbt und am Checkpoint wieder auftaucht. Was **nicht** gemessen
+ist: wie sich das anfühlt. Kameraabstand, Lauftempo und die Länge der
+Angriffsvorwarnung brauchen einen Durchlauf am Bildschirm.
 
 Was in M1 **nicht** enthalten ist, bewusst: eine große offene Welt, Reiten, Wetter,
 Mehrspieler, Blender-Modelle (die Welt läuft auf Primitivgeometrie), eine funktionierende
@@ -163,6 +168,7 @@ Ohne diesen Schritt scheitert ein Testlauf mit
 ```text
 alexle135 spiel/
 ├── README.md              diese Datei
+├── HANDOVER.md            Übergabe: Stand, Stolperfallen, nächste Schritte
 ├── STATUS.md              Live-Logbuch: Befehle, Entscheidungen, Rückschläge
 ├── pyproject.toml         Konfiguration der Hilfsskripte
 │
@@ -244,7 +250,10 @@ tools/run_tests.sh
 | `test_ui.gd` | 9 | Viertelherz-Genauigkeit, Dialoglebenszyklus, Pause, Speichern aus dem Menü |
 | `test_world_assets.gd` | 9 | Ressourcen laden, Art-Direction-Regeln, 48 Container-Fenster |
 | `test_interactions.gd` | 14 | Kiste einmalig, Tür mit und ohne Schlüssel, Druckplatte, Checkpoint |
-| `test_hub.gd` | 12 | Integration: Spieler fällt nicht durch die Welt, kompletter M1-Ablauf |
+| `test_enemies.gd` | 14 | Zustandsautomat, Vorwarnung, Tod, Trefferlage, HitBox/HurtBox über echte Area3D-Überlappung |
+| `test_hub.gd` | 14 | Integration: Spieler fällt nicht durch die Welt, kompletter M1-Ablauf |
+
+Gezählt werden Testmethoden, nicht einzelne Assertions.
 
 ### Eine Testdatei schreiben
 
@@ -323,9 +332,20 @@ Deshalb während der Arbeit mit Filter aufrufen, vor der Integration immer ungef
 
 Verbindlich: [docs/ASSETS.md](docs/ASSETS.md).
 
-**Derzeit sind keine Fremdassets im Repository.** Das Projekt läuft vollständig auf
-Primitivgeometrie und prozeduralen Materialien. Es wird Godots Standardschrift verwendet;
-keine Schriftdatei ist eingebunden.
+**Derzeit sind keine Fremdassets im Repository** — `find game/assets blender -type f`
+liefert 0 Dateien. Das Projekt läuft vollständig auf Primitivgeometrie und prozeduralen
+Materialien. Es wird Godots Standardschrift verwendet; keine Schriftdatei ist eingebunden.
+
+Wann sich das ändert:
+
+| Phase | Assets | Herkunft |
+|---|---|---|
+| M1, M2 | keine | Blockout aus Primitiven, Materialien prozedural in `.tres` |
+| M3 (Art Pass) | Eigenbau in Blender | die 9 Modelle mit Dreiecksbudget aus [docs/ASSETS.md](docs/ASSETS.md) §5 |
+| M3, M4 | ggf. Ton und Schrift | nur CC0/Public Domain, dokumentiert **vor** der Nutzung |
+
+Die Reihenfolge ist Absicht: erst die Mechanik mit gemessenen Maßen, dann Modelle, die in
+diese Maße passen. Umgekehrt wird jede Geometrie zweimal gebaut.
 
 Zulässig sind CC0, Public Domain, eindeutig kompatibel lizenzierte Assets und Eigenbau.
 Jedes Fremdasset wird mit Quelle, Autor, Lizenz, Abrufdatum und Änderungen dokumentiert.

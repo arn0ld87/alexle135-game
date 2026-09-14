@@ -59,7 +59,7 @@ func atest_hub_enthaelt_alle_m1_inhalte() -> void:
 	var expected: PackedStringArray = [
 		"WorldEnvironment", "Sun", "Blockout", "VpsTower", "Player", "HUD",
 		"PauseMenu", "AS", "ChestSword", "KeyTerminal", "HeartTerrace",
-		"GateTerminal", "CheckpointSpawn", "CheckpointGate",
+		"GateTerminal", "CheckpointSpawn", "CheckpointGate", "BitrotSlimeHub",
 	]
 	for node_name: String in expected:
 		_runner.assert_true(hub.get_node_or_null(node_name) != null,
@@ -270,3 +270,50 @@ func atest_as_schliesst_quest_erst_mit_schluessel_ab() -> void:
 	npc.interact(player)
 	_runner.assert_eq(GameState.quest_state("q_seite_down"), "done",
 		"mit Schlüssel abgeschlossen")
+
+
+# --- Gegner im Hub --------------------------------------------------------
+
+func atest_schleim_steht_im_hub_und_ist_bekaempfbar() -> void:
+	var hub: Node3D = _load_hub()
+	if hub == null:
+		return
+	await _runner.wait_physics_frames(4)
+
+	var slime: Node3D = hub.get_node_or_null("BitrotSlimeHub")
+	_runner.assert_true(slime != null, "Schleim in der Szene")
+	if slime == null:
+		return
+
+	# Er muss auf dem Boden stehen, nicht darin oder darüber. Sein Ursprung
+	# liegt in der Kugelmitte, Radius 0,5 — also ist 0,5 die richtige Antwort.
+	_runner.assert_almost_eq(slime.global_position.y, 0.5, 0.25,
+		"Schleim steht auf dem Platz (ist %.3f)" % slime.global_position.y)
+
+	# Gegnerkörper auf Layer 4, damit die Spieler-HitBox (Maske 4) ihn trifft.
+	_runner.assert_eq((slime as CharacterBody3D).collision_layer, 4,
+		"Schleim liegt auf Layer 4 (enemy)")
+	var hurt_box: HurtBox = slime.get_node_or_null("HurtBox") as HurtBox
+	_runner.assert_true(hurt_box != null and hurt_box.collision_layer == 4,
+		"HurtBox des Schleims ist für die Spielerklinge erreichbar")
+
+	# Er muss weit genug vom Spawn weg sein, damit der Spieler zuerst das
+	# Schwert holen kann. detect_radius ist 8.
+	var player: Node3D = hub.get_node_or_null("Player")
+	if player != null:
+		_runner.assert_true(slime.global_position.distance_to(player.global_position) > 8.0,
+			"Schleim entdeckt den Spieler nicht direkt beim Spawn")
+
+
+func atest_erledigter_schleim_bleibt_nach_neuladen_weg() -> void:
+	# Derselbe Persistenzpfad wie bei der geleerten Kiste, nur über den Tod.
+	GameState.set_flag("hub_slime_defeated")
+
+	var hub: Node3D = _load_hub()
+	if hub == null:
+		return
+	await _runner.wait_physics_frames(4)
+
+	var slime: Node = hub.get_node_or_null("BitrotSlimeHub")
+	_runner.assert_true(slime == null or slime.is_queued_for_deletion(),
+		"erledigter Schleim steht nach dem Laden nicht wieder da")
